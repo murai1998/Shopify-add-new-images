@@ -1,0 +1,103 @@
+async function getData() {
+  (async () => {
+    let params = { limit: 10 };
+
+    do {
+      const products = await shopify2.product.list(params);
+
+      products.map(async (product) => {
+        let outlet_id =  product.id;
+  product.variants.map(async (item) => {
+    // console.log(item)
+    let sku = item.sku;
+    let par_sku = sku.replace(/_(.)+/g, "");
+
+    if (par_sku in all_skus) {
+      let img_id_outlet = item.image_id;
+      let wigs_id = all_skus[par_sku];
+      let wigs_product = await shopify1.product.get(wigs_id);
+      if (wigs_product.variants.find((x) => x.sku == sku)) {
+        let var_id = wigs_product.variants.find((x) => x.sku == sku).id;
+
+        let image_id2 = wigs_product.variants.find((x) => x.sku == sku && (x.option1 == item.option1 || x.option1 == item.option2));
+        // console.log('This id', image_id2)
+        if(image_id2){
+            let image_id = image_id2.image_id
+            let image = await shopify1.productImage.get(wigs_id, image_id);
+            // console.log("Imad id", image);
+            let src_wigs = image.src;
+            let alt_wigs = image.alt;
+            let delete_img = await shopify2.productImage.delete(
+              outlet_id,
+              img_id_outlet
+            );
+            console.log("Delete", delete_img);
+            let new_img = await shopify2.productImage.create(outlet_id, {
+              variant_ids: [item.id],
+              src: src_wigs,
+              alt: alt_wigs,
+            });
+            console.log("This image", new_img);
+        }
+        
+      }
+    }
+  });
+  console.log('Running')
+      });
+
+      params = products.nextPageParameters;
+    } while (params !== undefined);
+  })().catch(console.error);
+}
+
+//   getData();
+
+
+
+
+
+//------------------Change-variants-images-for-a-SINGLE-PRODUCT--------------
+async function getData2() {
+  let outlet_id = 5112606621827;
+  let product = await shopify2.product.get(outlet_id);
+ 
+
+  product.variants.map(async (item) => {
+    console.log(item)
+    let sku = item.sku;
+    let par_sku = sku.replace(/_(.)+/g, "");
+
+    if (par_sku in all_skus) {
+      let img_id_outlet = item.image_id;
+      let wigs_id = all_skus[par_sku];
+      let wigs_product = await shopify1.product.get(wigs_id);
+      if (wigs_product.variants.find((x) => x.sku == sku)) {
+        let var_id = wigs_product.variants.find((x) => x.sku == sku).id;
+
+        let image_id2 = wigs_product.variants.find((x) => x.sku == sku && (x.option1 == item.option1 || x.option1 == item.option2));
+        console.log('This id', image_id2)
+        if(image_id2){
+            let image_id = image_id2.image_id
+            let image = await shopify1.productImage.get(wigs_id, image_id);
+            console.log("Imad id", image);
+            let src_wigs = image.src;
+            let alt_wigs = image.alt;
+            let delete_img = await shopify2.productImage.delete(
+              outlet_id,
+              img_id_outlet
+            );
+            console.log("Delete", delete_img);
+            let new_img = await shopify2.productImage.create(outlet_id, {
+              variant_ids: [item.id],
+              src: src_wigs,
+              alt: alt_wigs,
+            });
+            console.log("This image", new_img);
+        }
+        
+      }
+    }
+  });
+}
+// getData2();
